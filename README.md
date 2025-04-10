@@ -11,7 +11,7 @@
      - age
      - nationality
      - hobbies (list of 0 to 10 items)
-   - Display the list as individual cards using virtual scroll component, susequent pages must be loaded using infinite scroll technique (preferably using `@tanstack/react-virtual`)
+   - Display the list as individual cards using virtual scroll component, subsequent pages must be loaded using infinite scroll technique (preferably using `@tanstack/react-virtual`)
    - Design the card as
      ```
      |----------------------------------|
@@ -34,7 +34,7 @@
 3. Create an api that will process each request in webworker and respond with the result over websocket
 
    - The api endpoint must cache each request into an in-memory queue and respond with `pending`
-   - The queued requests must be processed in a webworker, the worker should send a result over websockets (for the execise a text result can be sent after a timeout of 2seconds)
+   - The queued requests must be processed in a webworker, the worker should send a result over websockets (for the exercise a text result can be sent after a timeout of 2seconds)
    - In react show 20 items that correspond to 20 requests, display `pending` for each of the requests and display corresponding result on receiving the websocket result
 
    > request --> `pending` --> socket message --> `result`
