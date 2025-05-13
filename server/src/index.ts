@@ -40,6 +40,25 @@ app.get('/api/users', (req: Request, res: Response) => {
     )
   }
 
+  const filters = filteredUsers.reduce(
+    (acc, user) => {
+      user.hobbies.forEach((hobby: string) => {
+        acc.hobbies.set(hobby, (acc.hobbies.get(hobby) || 0) + 1)
+      })
+      
+      acc.nationalities.set(
+        user.nationality,
+        (acc.nationalities.get(user.nationality) || 0) + 1
+      )
+      
+      return acc
+    },
+    {
+      hobbies: new Map<string, number>(),
+      nationalities: new Map<string, number>()
+    }
+  )
+
   const totalUsers = filteredUsers.length
   const totalPages = Math.ceil(totalUsers / limit)
   const startIndex = (page - 1) * limit
@@ -49,6 +68,10 @@ app.get('/api/users', (req: Request, res: Response) => {
 
   res.json({
     data: paginatedUsers,
+    filters: {
+      hobbies: Array.from(filters.hobbies.entries()).map(([label, count]) => ({ label, count })),
+      nationalities: Array.from(filters.nationalities.entries()).map(([label, count]) => ({ label, count }))
+    },
     total: totalUsers,
     page,
     totalPages
