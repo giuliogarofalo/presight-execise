@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express'
 import { createServer } from 'http'
+import { faker } from '@faker-js/faker'
 import cors from 'cors'
 import { generateUsers } from './data'
 import { User } from './types'
@@ -9,6 +10,26 @@ const server = createServer(app)
 
 app.use(cors())
 app.use(express.json())
+
+app.get('/api/stream-text', (_req: Request, res: Response) => {
+  const text = faker.lorem.paragraphs(32)
+  let index = 0
+
+  res.setHeader('Content-Type', 'text/plain')
+  res.setHeader('Transfer-Encoding', 'chunked')
+
+  const streamChar = () => {
+    if (index < text.length) {
+      res.write(text[index])
+      index++
+      setTimeout(streamChar, 500)
+    } else {
+      res.end()
+    }
+  }
+
+  streamChar()
+})
 
 const users: User[] = generateUsers(100)
 
@@ -63,7 +84,6 @@ app.get('/api/users', (req: Request, res: Response) => {
   const totalPages = Math.ceil(totalUsers / limit)
   const startIndex = (page - 1) * limit
   const endIndex = startIndex + limit
-
   const paginatedUsers = filteredUsers.slice(startIndex, endIndex)
 
   res.json({
@@ -77,7 +97,6 @@ app.get('/api/users', (req: Request, res: Response) => {
     totalPages
   })
 })
-
 
 server.listen(3000, () => {
   console.log('Server running on port 3000')
