@@ -2,7 +2,6 @@ import request from 'supertest'
 import express from 'express'
 import { faker } from '@faker-js/faker'
 
-// Mock faker to return consistent text
 jest.mock('@faker-js/faker', () => ({
   faker: {
     lorem: {
@@ -15,10 +14,8 @@ describe('Streaming Text API', () => {
   let app: express.Application
 
   beforeEach(() => {
-    // Reset express app
     app = express()
     
-    // Setup stream endpoint
     app.get('/api/stream-text', (req, res) => {
       const text = faker.lorem.paragraphs(32)
       let index = 0
@@ -30,7 +27,7 @@ describe('Streaming Text API', () => {
         if (index < text.length) {
           res.write(text[index])
           index++
-          setTimeout(streamChar, 10) // Use shorter delay for tests
+          setTimeout(streamChar, 10)
         } else {
           res.end()
         }
