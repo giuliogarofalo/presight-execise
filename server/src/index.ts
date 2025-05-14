@@ -4,12 +4,100 @@ import { faker } from '@faker-js/faker'
 import cors from 'cors'
 import { generateUsers } from './data'
 import { User } from './types'
+import { WebSocketServer, WebSocket } from 'ws'
+import { QueueItem, WebSocketMessage } from './types'
 
 const app = express()
 const server = createServer(app)
 
 app.use(cors())
 app.use(express.json())
+
+const wss = new WebSocketServer({ server })
+const queue = new Map<string, QueueItem>()
+
+wss.on('connection', (ws) => {
+  console.log('New WebSocket client connected')
+
+  ws.on('error', (error) => {
+    console.error('WebSocket error:', error)
+  })
+
+  ws.on('close', () => {
+    console.log('Client disconnected')
+  })
+})
+
+app.post('/api/queue-request', (req: Request, res: Response) => {
+  const id = faker.string.uuid()
+  const item: QueueItem = {
+    id,
+    status: 'pending',
+    timestamp: Date.now()
+  }
+  
+  queue.set(id, item)
+  console.log(`Created new task: ${id}`)
+  res.json({ id, status: 'pending' })
+
+  if (queue.size >= 1) {
+    processNextItem()
+  }
+})
+
+app.get('/api/queue-request/:id', (req: Request, res: Response) => {
+  const item = queue.get(req.params.id)
+  if (!item) {
+    res.status(404).json({ error: 'Item not found' })
+    return
+  }
+  res.json(item)
+})
+
+let isProcessing = false
+
+const processNextItem = () => {
+  if (isProcessing) return
+  
+  const pendingItems = Array.from(queue.entries()).filter(([_, item]) => item.status === 'pending')
+  if (pendingItems.length === 0) {
+    isProcessing = false
+    return
+  }
+
+  isProcessing = true
+  const randomIndex = Math.floor(Math.random() * pendingItems.length)
+  const [id, item] = pendingItems[randomIndex]
+  
+  console.log(`Completing task ${id}`)
+  item.status = 'completed'
+  const generatedText = faker.lorem.paragraphs(3)
+  item.result = generatedText
+  
+  const wsMessage: WebSocketMessage = {
+    type: 'result',
+    data: {
+      id,
+      text: item.result
+    }
+  }
+
+  const messageStr = JSON.stringify(wsMessage)
+
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(messageStr)
+    }
+  })
+
+  const delay = Math.random() * 2000 + 1000
+  setTimeout(() => {
+    isProcessing = false
+    processNextItem()
+  }, delay)
+}
+
+processNextItem()
 
 app.get('/api/stream-text', (_req: Request, res: Response) => {
   const text = faker.lorem.paragraphs(32)
@@ -100,4 +188,5 @@ app.get('/api/users', (req: Request, res: Response) => {
 
 server.listen(3000, () => {
   console.log('Server running on port 3000')
+  isProcessing = false
 })  
