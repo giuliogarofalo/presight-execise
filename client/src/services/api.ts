@@ -2,7 +2,9 @@ const API_CONFIG = {
   baseUrl: 'http://localhost:3000/api',
   endpoints: {
     users: '/users',
-    streamText: '/stream-text'
+    streamText: '/stream-text',
+    queueRequest: '/queue-request',
+    queueStatus: '/queue-status'
   }
 } as const
 
@@ -35,7 +37,33 @@ async function getStreamReader(endpoint: string) {
   return reader
 }
 
+interface QueueResponse {
+  id: string
+  status: 'pending' | 'completed'
+  result?: string
+  timestamp?: number
+}
+
 export const api = {
+  queue: {
+    create: async (): Promise<QueueResponse> => {
+      const response = await fetch(createApiUrl(API_CONFIG.endpoints.queueRequest), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      return response.json()
+    },
+    get: async (id: string): Promise<QueueResponse> => {
+      const response = await fetch(`${createApiUrl(API_CONFIG.endpoints.queueRequest)}/${id}`)
+      return response.json()
+    },
+    status: async (id: string): Promise<QueueResponse> => {
+      const response = await fetch(`${createApiUrl(API_CONFIG.endpoints.queueStatus)}/${id}`)
+      return response.json()
+    }
+  },
   users: {
     list: async (params: Record<string, string>) => {
       const response = await fetch(createApiUrl(API_CONFIG.endpoints.users, params))

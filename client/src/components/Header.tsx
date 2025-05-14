@@ -2,7 +2,9 @@ import { NavLink } from 'react-router-dom'
 
 const navigation = [
   { name: 'Users', path: '/' },
-  { name: 'Stream Text', path: '/stream' },]
+  { name: 'Stream Text', path: '/stream' },
+  { name: 'Queue', path: '/queue' },
+]
 
 export default function Header() {
   return (
