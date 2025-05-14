@@ -1,6 +1,7 @@
 {
   "name": "presight-client",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
@@ -12,6 +13,8 @@
     "lint:fix": "eslint src --ext ts,tsx --fix"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.76.1",
+    "@tanstack/react-virtual": "^3.13.8",
     "eslint": "^8.56.0",
     "react": "~19.1.0",
     "react-dom": "~19.1.0",

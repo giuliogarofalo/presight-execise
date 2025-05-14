@@ -1,4 +1,4 @@
-export interface User {
+export type User = {
   id: string
   first_name: string
   last_name: string
@@ -8,7 +8,7 @@ export interface User {
   avatar: string
 }
 
-export interface UsersResponse {
+export type UsersResponse = {
   data: User[]
   total: number
   page: number
