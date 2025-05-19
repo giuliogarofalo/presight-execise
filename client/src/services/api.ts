@@ -80,8 +80,7 @@ export const api = {
           onChunk(text)
         }
         return text
-      },
-      getReader: () => getStreamReader(API_CONFIG.endpoints.streamText)
+      }
     }
   }
 }

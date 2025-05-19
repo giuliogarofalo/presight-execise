@@ -1,17 +1,5 @@
 import { useState, useEffect } from 'react'
-
-async function* readStream(reader: ReadableStreamDefaultReader<Uint8Array>) {
-  const decoder = new TextDecoder()
-  try {
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      yield decoder.decode(value, { stream: true })
-    }
-  } finally {
-    reader.releaseLock()
-  }
-}
+import { api } from '../services/api'
 
 export default function StreamingTextDisplay() {
   const [streamedText, setStreamedText] = useState('')
@@ -19,28 +7,43 @@ export default function StreamingTextDisplay() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    let mounted = true;
+    
     const fetchStream = async () => {
-      setLoading(true)
+      if (!mounted) return;
+      setLoading(true);
+      
       try {
-        const response = await fetch('http://localhost:3000/api/stream-text')
-        const reader = response.body?.getReader()
-        if (!reader) return
-
-        let text = ''
-        for await (const chunk of readStream(reader)) {
-          text += chunk
-          setStreamedText(text)
+        await api.stream.text.subscribe((text) => {
+          if (mounted) {
+            setStreamedText(text);
+          }
+        });
+        
+        if (mounted) {
+          setIsComplete(true);
         }
-        setIsComplete(true)
       } catch (error) {
-        console.error('Error fetching stream:', error)
+        if (mounted) {
+          console.error('Error fetching stream:', error);
+        }
       } finally {
-        setLoading(false)
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    }
+    };
 
-    fetchStream()
-  }, [setLoading, setStreamedText, setIsComplete])
+    fetchStream();
+
+    // Cleanup function that runs when component unmounts
+    return () => {
+      mounted = false;
+      setStreamedText('');
+      setIsComplete(false);
+      setLoading(false);
+    };
+  }, [])
 
   return (
     <div className="p-4">

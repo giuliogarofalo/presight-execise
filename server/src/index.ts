@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express'
 import { createServer } from 'http'
 import { faker } from '@faker-js/faker'
 import cors from 'cors'
+import { Worker } from 'worker_threads'
 import { generateUsers } from './data'
 import { User } from './types'
 import { WebSocketServer, WebSocket } from 'ws'
@@ -69,32 +70,33 @@ const processNextItem = () => {
   const randomIndex = Math.floor(Math.random() * pendingItems.length)
   const [id, item] = pendingItems[randomIndex]
   
-  console.log(`Completing task ${id}`)
-  item.status = 'completed'
-  const generatedText = faker.lorem.paragraphs(3)
-  item.result = generatedText
-  
-  const wsMessage: WebSocketMessage = {
-    type: 'result',
-    data: {
-      id,
-      text: item.result
+  console.log(`Processing task ${id}`)
+  const worker = new Worker('./src/worker.ts')
+
+  worker.on('message', (result) => {
+    item.status = 'completed'
+    item.result = result.text
+
+    const wsMessage: WebSocketMessage = {
+      type: 'result',
+      data: {
+        id,
+        text: result.text
+      }
     }
-  }
 
-  const messageStr = JSON.stringify(wsMessage)
+    wss.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify(wsMessage))
+      }
+    })
 
-  wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(messageStr)
-    }
-  })
-
-  const delay = Math.random() * 2000 + 1000
-  setTimeout(() => {
+    worker.terminate()
     isProcessing = false
     processNextItem()
-  }, delay)
+  })
+
+  worker.postMessage(id)
 }
 
 processNextItem()
